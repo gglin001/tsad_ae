@@ -40,7 +40,7 @@ def main():
     train_set, test_set = random_split(all_set, split_shape)
 
     model = AutoEncoder(args).to(args.device)
-    print(f'model structure:\n {model}')
+    # print(f'model structure:\n {model}')
 
     model_fp = natsort.natsorted(glob.glob('model_saved/model*.pt'))[-1]
     print(f'using model file: {model_fp}')
@@ -52,11 +52,11 @@ def main():
         for test_x, in test_loader:
             _, test_y = model(test_x)
 
-            plt.figure(0)
             plt.subplots()
             plt.plot(test_x[0][0], '-b.', label='raw_input')
             plt.plot(test_y[0][0], '-ro', label='predicted')
 
+            plt.title(model_fp)
             plt.legend()
             plt.show()
 

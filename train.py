@@ -21,8 +21,7 @@ def args_gen():
                         help='batch_size')
     parser.add_argument('--lr', type=int, default=0.0001,
                         help='learning rate')
-    parser.add_argument('--continue_training', type=bool, default=True,
-                        help='if continue training')
+
     parser.add_argument('--log_interval', type=int, default=10,
                         help='print log every n epoch')
     parser.add_argument('--save_interval', type=int, default=100,
@@ -32,12 +31,13 @@ def args_gen():
                         help='raw imput signal length, like tensor.shape==(N, 1, 60) is 60')
     parser.add_argument('--latent_dim', type=int, default=8,
                         help='latent dimension')
+
+    parser.add_argument('--continue_training', type=bool, default=True,
+                        help='if continue training')
     parser.add_argument('--use_gpu', type=bool, default=True,
                         help='if use gpu')
     parser.add_argument('--num_workers', type=int, default=0,
                         help='dataloader workers')
-    parser.add_argument('--test_batch_size', type=int, default=100,
-                        help='test batch_size')
 
     args = parser.parse_args()
     args.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
@@ -63,7 +63,10 @@ def main():
     args = args_gen()
 
     rri_fp = './rris_tensor_norm.pt'
-    rris_tensor = torch.load(rri_fp)
+    if args.num_workers == 0:
+        rris_tensor = torch.load(rri_fp, map_location=args.device)
+    else:
+        rris_tensor = torch.load(rri_fp)
 
     all_set = TensorDataset(rris_tensor)
     split_shape = (int(rris_tensor.shape[0] * 0.8), rris_tensor.shape[0] - int(rris_tensor.shape[0] * 0.8))
@@ -81,19 +84,23 @@ def main():
     continue_epoch = 0
     if args.continue_training:
         try:
-            model_fp = natsort.natsorted(glob.glob('model_saved/model*.pt'))[-1]
+            mode_fps = glob.glob('model_saved/model*.pt')
+            if len(mode_fps) == 0:
+                raise FileNotFoundError('no saved model files')
+
+            model_fp = natsort.natsorted(mode_fps)[-1]
             optimizer_fp = natsort.natsorted(glob.glob('model_saved/optimizer*.pt'))[-1]
-            logging.info(f"load model file: '{model_fp}")
-            logging.info(f"load optimizer file: '{optimizer_fp}'")
             model_epoch = [int(x) for x in re.findall(r'\d+', model_fp)][0]
             optimizer_epoch = [int(x) for x in re.findall(r'\d+', optimizer_fp)][0]
-            if model_epoch == optimizer_epoch:
+            if model_epoch == optimizer_epoch and model_epoch > 100:
                 model.load_state_dict(torch.load(model_fp, map_location=args.device))
                 optimizer.load_state_dict(torch.load(optimizer_fp, map_location=args.device))
+                logging.info(f"load model file: '{model_fp}")
+                logging.info(f"load optimizer file: '{optimizer_fp}'")
                 continue_epoch = model_epoch
-                logging.info(f'continue training from epoch: {continue_epoch}')
         except:
-            logging.exception('[ ERROR ] load model checkpoint failed')
+            logging.exception('load model checkpoint failed')
+        logging.info(f'continue training from epoch: {continue_epoch}')
 
     model.train()
     for epoch in range(continue_epoch, args.epoch):

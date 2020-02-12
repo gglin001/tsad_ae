@@ -100,7 +100,7 @@ def main():
             torch.save(model.state_dict(), f'model_saved/model_{epoch}.pt')
             torch.save(optimizer.state_dict(), f'model_saved/optimizer_{epoch}.pt')
     torch.save(model.state_dict(), 'model_saved/model_fin.pt')
-    torch.save(optimizer.state_dict(), f'model_saved/optimizer_fin.pt')
+    torch.save(optimizer.state_dict(), 'model_saved/optimizer_fin.pt')
 
 
 if __name__ == "__main__":

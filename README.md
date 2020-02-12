@@ -28,22 +28,24 @@ Base steps:
 
 ## TODO
 
-[x] Autoencoder based on MLP
+- [x] Autoencoder based on MLP
 
-[x] Autoencoder based on CNN
+- [x] Autoencoder based on CNN
 
-[] Autoencoder based on RNN/LSTM
+- [] Autoencoder based on RNN/LSTM
 
-[] Autoencoder based on CNN+RNN
+- [] Autoencoder based on CNN+RNN
 
-[] VAE model
+- [] VAE model
 
-[] Some other adversarial models like GAN
+- [] Some other adversarial models like GAN
 
-[] Methods based on Machine Learning / Features
+- [] Methods based on Machine Learning / Features
 
 ## Code Structure
 
 `train.py` --> train model
+
 `test.py` --> run model
+
 `model*.py` --> models

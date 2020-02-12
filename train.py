@@ -1,9 +1,10 @@
 import argparse
-import os
 import glob
-import natsort
+import logging
+import os
 import re
 
+import natsort
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -40,8 +41,20 @@ def args_gen():
 
     args = parser.parse_args()
     args.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-    print(args)
+    logging.info(args)
     return args
+
+
+def logging_set():
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    file_handler = logging.FileHandler("log_training.log", mode='w')
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(levelname)s | %(message)s',
+        handlers=[file_handler, stream_handler]
+    )
 
 
 def main():
@@ -58,10 +71,10 @@ def main():
 
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,
                               shuffle=True, num_workers=args.num_workers)
-    print(f"training set length: {len(train_set)}")
+    logging.info(f"training set length: {len(train_set)}")
 
     model = AutoEncoder(args).to(args.device)
-    # print(f'model structure:\n {model}')
+    logging.info(f'model structure:\n {model}')
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_func = nn.MSELoss()
 
@@ -70,20 +83,20 @@ def main():
         try:
             model_fp = natsort.natsorted(glob.glob('model_saved/model*.pt'))[-1]
             optimizer_fp = natsort.natsorted(glob.glob('model_saved/optimizer*.pt'))[-1]
-            print(f"load model file: '{model_fp}'\nload optimizer file: '{optimizer_fp}'")
+            logging.info(f"load model file: '{model_fp}")
+            logging.info(f"load optimizer file: '{optimizer_fp}'")
             model_epoch = [int(x) for x in re.findall(r'\d+', model_fp)][0]
             optimizer_epoch = [int(x) for x in re.findall(r'\d+', optimizer_fp)][0]
             if model_epoch == optimizer_epoch:
                 model.load_state_dict(torch.load(model_fp, map_location=args.device))
                 optimizer.load_state_dict(torch.load(optimizer_fp, map_location=args.device))
                 continue_epoch = model_epoch
-                print(f'continue training from epoch: {continue_epoch}')
+                logging.info(f'continue training from epoch: {continue_epoch}')
         except:
-            print('[ ERROR ] load model checkpoint failed')
+            logging.exception('[ ERROR ] load model checkpoint failed')
 
     model.train()
     for epoch in range(continue_epoch, args.epoch):
-        print(epoch)
         for step, (x,) in enumerate(train_loader):
             x = x.to(args.device)
             encoded, decoded = model(x)
@@ -95,7 +108,7 @@ def main():
 
         if epoch % args.log_interval == 0:
             total_step = epoch * len(train_loader) + step
-            print(f"epoch: {epoch}", f"total_step: {total_step}", f"loss: {loss.data.cpu().numpy():.4f}")
+            logging.info((f"epoch: {epoch}", f"total_step: {total_step}", f"loss: {loss.data.cpu().numpy():.4f}"))
         if epoch % args.save_interval == 0:
             torch.save(model.state_dict(), f'model_saved/model_{epoch}.pt')
             torch.save(optimizer.state_dict(), f'model_saved/optimizer_{epoch}.pt')
@@ -104,4 +117,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging_set()
     main()

@@ -32,11 +32,9 @@ def main():
     torch.manual_seed(0)
     args = args_gen()
 
-    rri_fp = './rris_tensor_norm.pt'
+    rri_fp = './ltafdb_rris_tensor_norm.pt'
     rris_tensor = torch.load(rri_fp)
-    all_set = TensorDataset(rris_tensor)
-    split_shape = (int(rris_tensor.shape[0] * 0.8), rris_tensor.shape[0] - int(rris_tensor.shape[0] * 0.8))
-    train_set, test_set = random_split(all_set, split_shape)
+    test_set = TensorDataset(rris_tensor)
 
     model = AutoEncoder(args).to(args.device)
     # print(f'model structure:\n {model}')
@@ -44,9 +42,6 @@ def main():
     print(f'using model file: {model_fp}')
     model.load_state_dict(torch.load(model_fp, map_location=torch.device('cpu')))
     model.eval()
-
-    # disable manual seed
-    torch.seed()
 
     test_loader = DataLoader(test_set, args.test_batch_size, shuffle=True)
     with torch.no_grad():

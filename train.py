@@ -48,7 +48,7 @@ def args_gen():
 def logging_set():
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.INFO)
-    file_handler = logging.FileHandler("log_training.log", mode='w')
+    file_handler = logging.FileHandler("log_training.log", mode='a')
 
     logging.basicConfig(
         level=logging.INFO,
@@ -71,7 +71,6 @@ def main():
     all_set = TensorDataset(rris_tensor)
     split_shape = (int(rris_tensor.shape[0] * 0.8), rris_tensor.shape[0] - int(rris_tensor.shape[0] * 0.8))
     train_set, test_set = random_split(all_set, split_shape)
-
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,
                               shuffle=True, num_workers=args.num_workers)
     logging.info(f"training set length: {len(train_set)}")
@@ -98,6 +97,8 @@ def main():
                 logging.info(f"load model file: '{model_fp}")
                 logging.info(f"load optimizer file: '{optimizer_fp}'")
                 continue_epoch = model_epoch
+            else:
+                raise Exception('cannot load model checkpoint')
         except:
             logging.exception('load model checkpoint failed')
         logging.info(f'continue training from epoch: {continue_epoch}')

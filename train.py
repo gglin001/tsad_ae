@@ -64,7 +64,7 @@ def main():
     torch.manual_seed(0)
     args = args_gen()
 
-    rri_fp = './rris_tensor_norm.pt'
+    rri_fp = './nsr2db_rris_tensor_norm_lim.pt'
     if args.num_workers == 0:
         rris_tensor = torch.load(rri_fp, map_location=args.device)
     else:
@@ -137,8 +137,8 @@ def main():
             logging.info((
                 f"epoch: {epoch}",
                 f"total_step: {epoch * len(train_loader) + step}",
-                f"train_loss: {loss.data.cpu().numpy():.6f}",
-                f"val_loss: {val_loss.cpu().numpy():.6f}"
+                f"train_loss: {loss.data.cpu().numpy():.10f}",
+                f"val_loss: {val_loss.cpu().numpy():.10f}"
             ))
 
         if epoch % args.save_interval == 0:

@@ -37,17 +37,22 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         self.net = nn.Sequential(
-            nn.ConvTranspose1d(args.latent_dim, 16, kernel_size=11, padding=1),
+            nn.Upsample(32),
+            nn.Conv1d(args.latent_dim, 16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
+            nn.MaxPool1d(kernel_size=2),
 
-            nn.ConvTranspose1d(16, 32, kernel_size=22, padding=2),
+            nn.Upsample(64),
+            nn.Conv1d(16, 32, kernel_size=5, padding=2),
             nn.ReLU(inplace=True),
+            nn.MaxPool1d(kernel_size=2),
 
-            nn.ConvTranspose1d(32, 32, kernel_size=34, padding=3),
+            nn.Upsample(args.signal_len * 2),
+            nn.Conv1d(32, 32, kernel_size=7, padding=3),
             nn.ReLU(inplace=True),
+            nn.MaxPool1d(kernel_size=2),
 
-            nn.Conv1d(32, 1, kernel_size=11, padding=5),
-            nn.ReLU(inplace=True),
+            nn.Conv1d(32, 1, kernel_size=9, padding=4),
         )
 
     def forward(self, x):

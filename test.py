@@ -28,7 +28,6 @@ def args_gen():
 
 
 def main():
-    os.makedirs('model_saved', exist_ok=True)
     torch.manual_seed(0)
     args = args_gen()
 

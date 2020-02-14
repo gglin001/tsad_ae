@@ -32,10 +32,12 @@ def args_gen():
     parser.add_argument('--latent_dim', type=int, default=8,
                         help='latent dimension')
 
-    parser.add_argument('--continue_training', type=bool, default=True,
-                        help='if continue training')
+    parser.add_argument('--eval_val', type=bool, default=True,
+                        help='if eval validation set (True | False)')
+    parser.add_argument('--continue_training', type=bool, default=False,
+                        help='if continue training (True | False)')
     parser.add_argument('--use_gpu', type=bool, default=True,
-                        help='if use gpu')
+                        help='if use gpu (True | False)')
     parser.add_argument('--num_workers', type=int, default=0,
                         help='dataloader workers')
 
@@ -69,11 +71,18 @@ def main():
         rris_tensor = torch.load(rri_fp)
 
     all_set = TensorDataset(rris_tensor)
-    split_shape = (int(rris_tensor.shape[0] * 0.8), rris_tensor.shape[0] - int(rris_tensor.shape[0] * 0.8))
-    train_set, test_set = random_split(all_set, split_shape)
-    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size,
-                              shuffle=True, num_workers=args.num_workers)
+
+    train_len = int(len(all_set) * 0.7)
+    val_len = int(len(all_set) * 0.1)
+    test_len = len(all_set) - train_len - val_len
+    split_shape = (train_len, val_len, test_len)
+    train_set, val_set, test_set = random_split(all_set, split_shape)
+
+    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
+    val_loader = DataLoader(val_set, batch_size=len(val_set))
     logging.info(f"training set length: {len(train_set)}")
+    logging.info(f"validation set length: {len(val_set)}")
+    logging.info(f"test set length: {len(test_set)}")
 
     model = AutoEncoder(args).to(args.device)
     logging.info(f'model structure:\n {model}')
@@ -115,8 +124,23 @@ def main():
             optimizer.step()
 
         if epoch % args.log_interval == 0:
-            total_step = epoch * len(train_loader) + step
-            logging.info((f"epoch: {epoch}", f"total_step: {total_step}", f"loss: {loss.data.cpu().numpy():.4f}"))
+            if not args.eval_val:
+                val_loss = torch.tensor(-1)
+            else:
+                with torch.no_grad():
+                    model.eval()
+                    for val_x, in val_loader:
+                        val_encoded, val_decoded = model(val_x)
+                        val_loss = loss_func(val_decoded, val_x)
+                    model.train()
+
+            logging.info((
+                f"epoch: {epoch}",
+                f"total_step: {epoch * len(train_loader) + step}",
+                f"train_loss: {loss.data.cpu().numpy():.6f}",
+                f"val_loss: {val_loss.cpu().numpy():.6f}"
+            ))
+
         if epoch % args.save_interval == 0:
             torch.save(model.state_dict(), f'model_saved/model_{epoch}.pt')
             torch.save(optimizer.state_dict(), f'model_saved/optimizer_{epoch}.pt')

@@ -78,8 +78,14 @@ def main():
     split_shape = (train_len, val_len, test_len)
     train_set, val_set, test_set = random_split(all_set, split_shape)
 
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-    val_loader = DataLoader(val_set, batch_size=len(val_set))
+    train_loader = DataLoader(
+        dataset=train_set,
+        batch_size=args.batch_size,
+        shuffle=True,
+        pin_memory=True,
+        num_workers=args.num_workers
+    )
+    val_loader = DataLoader(dataset=val_set, batch_size=len(val_set))
     logging.info(f"training set length: {len(train_set)}")
     logging.info(f"validation set length: {len(val_set)}")
     logging.info(f"test set length: {len(test_set)}")

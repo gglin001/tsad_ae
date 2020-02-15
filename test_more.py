@@ -8,16 +8,21 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from import_model import *
+from test import apply_model, args_gen
 
 
 def args_gen():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test_batch_size', type=int, default=10,
+    parser.add_argument('--test_file', type=str, help='test file path',
+                        default='ltafdb_rris_tensor_norm.pt')
+    parser.add_argument('--test_batch_size', type=int, default=20,
                         help='test batch_size')
     parser.add_argument('--signal_len', type=int, default=60,
                         help='learning rate')
     parser.add_argument('--latent_dim', type=int, default=8,
                         help='latent dim')
+    parser.add_argument('--auto_close_fig', type=bool, default=False,
+                        help='if auto close figure while viewing results')
     parser.add_argument('--use_gpu', type=bool, default=False,
                         help='if use gpu')
 
@@ -28,33 +33,13 @@ def args_gen():
 
 
 def main():
-    os.makedirs('model_saved', exist_ok=True)
-    torch.manual_seed(0)
     args = args_gen()
 
-    rri_fp = './ltafdb_rris_tensor_norm.pt'
-    rris_tensor = torch.load(rri_fp)
+    rris_tensor = torch.load(args.test_file).to(args.device)
+    print(f'loaded file: {args.test_file}')
     test_set = TensorDataset(rris_tensor)
-
-    model = AutoEncoder(args).to(args.device)
-    # print(f'model structure:\n {model}')
-    model_fp = natsort.natsorted(glob.glob('model_saved/model*.pt'))[-1]
-    print(f'using model file: {model_fp}')
-    model.load_state_dict(torch.load(model_fp, map_location=torch.device('cpu')))
-    model.eval()
-
     test_loader = DataLoader(test_set, args.test_batch_size, shuffle=True)
-    with torch.no_grad():
-        for test_x, in test_loader:
-            _, test_y = model(test_x)
-
-            plt.subplots()
-            plt.plot(test_x[0][0], '-b.', label='raw_input')
-            plt.plot(test_y[0][0], '-ro', label='predicted')
-
-            plt.title(model_fp)
-            plt.legend()
-            plt.show()
+    apply_model(test_loader, args)
 
 
 if __name__ == "__main__":

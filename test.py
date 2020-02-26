@@ -8,27 +8,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from import_model import *
-
-
-def args_gen():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--test_file', type=str, help='test file path',
-                        default='nsr2db_rris_tensor_norm_lim.pt')
-    parser.add_argument('--test_batch_size', type=int, default=20,
-                        help='test batch_size')
-    parser.add_argument('--signal_len', type=int, default=60,
-                        help='learning rate')
-    parser.add_argument('--latent_dim', type=int, default=8,
-                        help='latent dim')
-    parser.add_argument('--auto_close_fig', type=bool, default=False,
-                        help='if auto close figure while viewing results')
-    parser.add_argument('--use_gpu', type=bool, default=False,
-                        help='if use gpu')
-
-    args = parser.parse_args()
-    args.device = torch.device('cuda' if args.use_gpu and torch.cuda.is_available() else 'cpu')
-    print(args)
-    return args
+from argparse_set import args_gen
 
 
 def apply_model(test_loader, args):
@@ -56,25 +36,24 @@ def apply_model(test_loader, args):
                 ax[idx].plot(test_x[idx], '-b.', label='raw_input')
                 ax[idx].plot(test_y[idx], '-ro', label='predicted')
                 if idx == 0:
-                    ax[idx].set_title(model_fp)
                     ax[idx].legend()
             plt.tight_layout()
-            if args.auto_close_fig:
-                plt.show(block=False)
-                plt.pause(5)
-                plt.close()
-            else:
-                plt.show()
+            plt.suptitle(f'data:{args.test_file}\nmodel:{model_fp}',
+                         **{'color': 'm', 'bbox': dict(facecolor='w', alpha=0.7)})
+            plt.show()
 
 
 def main():
-    torch.manual_seed(0)
     args = args_gen()
+    args.device = torch.device('cpu')
+    args.test_file = 'nsr2db_rris_tensor_norm_lim.pt'
 
     rris_tensor = torch.load(args.test_file).to(args.device)
     print(f'loaded file: {args.test_file}')
     all_set = TensorDataset(rris_tensor)
     split_shape = (int(rris_tensor.shape[0] * 0.8), rris_tensor.shape[0] - int(rris_tensor.shape[0] * 0.8))
+
+    torch.manual_seed(0)
     train_set, test_set = random_split(all_set, split_shape)
     test_loader = DataLoader(test_set, args.test_batch_size, shuffle=True)
     apply_model(test_loader, args)

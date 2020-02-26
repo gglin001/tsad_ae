@@ -62,22 +62,22 @@ def main():
     continue_epoch = 0
     if args.continue_training:
         try:
-            mode_fps = glob.glob('model_saved/model*.pt')
-            if len(mode_fps) == 0:
-                raise FileNotFoundError('no saved model files')
+            checkpoint_fps = glob.glob('model_saved/checkpoint_*.pt')
+            if len(checkpoint_fps) == 0:
+                raise FileNotFoundError('no saved checkpoint files')
+            checkpoint_fp = natsort.natsorted(checkpoint_fps)[-1]
 
-            model_fp = natsort.natsorted(mode_fps)[-1]
-            optimizer_fp = natsort.natsorted(glob.glob('model_saved/optimizer*.pt'))[-1]
-            model_epoch = [int(x) for x in re.findall(r'\d+', model_fp)][0]
-            optimizer_epoch = [int(x) for x in re.findall(r'\d+', optimizer_fp)][0]
-            if model_epoch == optimizer_epoch and model_epoch > 100:
-                model.load_state_dict(torch.load(model_fp, map_location=args.device))
-                optimizer.load_state_dict(torch.load(optimizer_fp, map_location=args.device))
-                logging.info(f"load model file: '{model_fp}")
-                logging.info(f"load optimizer file: '{optimizer_fp}'")
-                continue_epoch = model_epoch
-            else:
-                raise Exception('cannot load model checkpoint')
+            checkpoint = torch.load(checkpoint_fp, map_location=args.device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            continue_epoch = checkpoint['epoch']
+            continue_loss = checkpoint['loss']
+
+            logging.info(f"load checkpoint file: '{checkpoint_fp}")
+            logging.info((
+                f"continue epoch: {continue_epoch}",
+                f"train_loss: {continue_loss.data.cpu().numpy():.10f}",
+            ))
         except:
             logging.exception('load model checkpoint failed')
         logging.info(f'continue training from epoch: {continue_epoch}')
@@ -114,10 +114,18 @@ def main():
             ))
 
         if epoch % args.save_interval == 0:
-            torch.save(model.state_dict(), f'model_saved/model_{epoch}.pt')
-            torch.save(optimizer.state_dict(), f'model_saved/optimizer_{epoch}.pt')
-    torch.save(model.state_dict(), 'model_saved/model_fin.pt')
-    torch.save(optimizer.state_dict(), 'model_saved/optimizer_fin.pt')
+            torch.save({
+                'epoch': epoch,
+                'loss': loss,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, f'model_saved/checkpoint_epoch_{epoch}.pt')
+    torch.save({
+        'epoch': epoch,
+        'loss': loss,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, f'model_saved/checkpoint_epoch_{epoch}.pt')
 
 
 if __name__ == "__main__":

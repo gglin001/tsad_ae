@@ -53,3 +53,9 @@ Base steps:
 `*.npy` --> training data or test data, (may need to unzip)
 
 `*.pickle` --> raw data, need to transform to apply a model
+
+## Smaple output
+
+|           normal beats            |            anormal beats            |
+| :-------------------------------: | :---------------------------------: |
+| ![normal beats](./img/normal.png) | ![anormal beats](./img/anormal.png) |

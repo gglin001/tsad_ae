@@ -7,7 +7,7 @@ from utils import norm_func_ibi, view_res
 
 
 def apply_anormal_raw():
-    fp = 'rew_anormal.pickle'
+    fp = 'raw_anormal.pickle'
     df = pd.read_pickle(fp)
     print(fp)
     print(df.shape)
@@ -23,5 +23,18 @@ def apply_anormal_raw():
     view_res(y_t, y_p, rri, label_flag=False)
 
 
+def apply_normal_raw():
+    fp = 'normal.npy'
+    rri = np.load(fp)
+    rri = rri.reshape((len(rri), 1, -1))
+    rri = rri[:1000]
+
+    y_p = apply_model(rri)
+    y_t = np.zeros_like(y_p)
+
+    view_res(y_t, y_p, rri, label_flag=False, show_all=True)
+
+
 if __name__ == "__main__":
     apply_anormal_raw()
+    # apply_normal_raw()

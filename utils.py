@@ -18,7 +18,7 @@ def convert_normed_rri(normed_rri, max_rri=2000, min_rri=300):
     return rri, hr
 
 
-def view_res(y_t, y_p, data_x, label_flag=True):
+def view_res(y_t, y_p, data_x, label_flag=True, show_all=False):
     if label_flag:
         y_t = np.asarray([np.argmax(x) for x in y_t])
         y_p = np.asarray([np.argmax(x) for x in y_p])
@@ -40,10 +40,13 @@ def view_res(y_t, y_p, data_x, label_flag=True):
         ax.legend()
     plt.show()
 
-    error_res_idxs = np.where(minus_abs > 0.5)[0]
-    print((f'error_res_idxs: {len(error_res_idxs)}, total_idxs: {len(y_t)}',
-           f'error_ratio: {len(error_res_idxs)/len(y_t) * 100:.4f}%',
-           f'Acc: {(1-len(error_res_idxs)/len(y_t)) * 100:.4f}%'))
+    if not show_all:
+        error_res_idxs = np.where(minus_abs > 0.5)[0]
+        print((f'error_res_idxs: {len(error_res_idxs)}, total_idxs: {len(y_t)}',
+               f'error_ratio: {len(error_res_idxs)/len(y_t) * 100:.4f}%',
+               f'Acc: {(1-len(error_res_idxs)/len(y_t)) * 100:.4f}%'))
+    else:
+        error_res_idxs = np.arange(len(minus_abs))
 
     current_idx = 0
     while(current_idx < len(error_res_idxs)):

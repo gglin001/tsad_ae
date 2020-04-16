@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from apply_model import apply_model_loader as apply_model
 from import_model import *
+from utils import view_res
 
 
 def main():
